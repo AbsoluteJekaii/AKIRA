@@ -308,9 +308,9 @@ Tkinter
 
 | Nama | Peran |
 |---|---|
-| Maulana Dzaky Putra Irawan | Integrator — kalender, orkestrasi |
-| *[Nama Anggota 2]* | Audio — wake word, perekaman, STT |
-| *[Nama Anggota 3]* | NLP — pemahaman bahasa, tanggal |
-| *[Nama Anggota 4]* | Dialog & UX — suara, antarmuka, pengujian |
+| Maulana Dzaky Putra Irawan | Ketua tim — integrasi, kalender, orkestrasi |
+| Alma Aulia Syaharani | Audio — wake word, perekaman, STT |
+| Wahyu Alamsyah | NLP — pemahaman bahasa, tanggal |
+| Ezhar Mahesa | Dialog & UX — suara, antarmuka, pengujian |
 
 Laboratorium Informatika, Universitas Gunadarma — 2026
