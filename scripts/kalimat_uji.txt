@@ -1,0 +1,40 @@
+# 30 kalimat uji AKIRA — dibacakan BERURUTAN dalam satu sesi.
+# Format: aksi_yang_diharapkan | kalimat
+# Baris diawali # diabaikan. Jangan mengubah urutan: skrip mencocokkan
+# ucapan ke kalimat sesuai urutan ini.
+#
+# Setelah AKIRA menjawab tiap kalimat, lanjutkan sesuai kebutuhan dialog
+# (jawab "lewati", "benar", "batalkan", dst.) sebelum membaca kalimat berikutnya.
+# Untuk perintah catat/hapus/pindah, jawab "batalkan" saat konfirmasi supaya
+# kalender tidak penuh jadwal uji — yang diukur adalah PEMAHAMANNYA.
+
+baca | cek jadwal besok
+baca | jadwal saya hari ini apa aja
+baca | hari ini saya kosong ga
+baca | besok gue sibuk ga
+baca | bacakan jadwal minggu depan
+baca | jadwal tujuh hari ke depan
+catat | catat meeting besok jam tiga sore
+catat | buatkan jadwal rapat divisi tanggal sepuluh jam sembilan pagi
+catat | tambahin jadwal kuliah lusa jam satu siang
+catat | catetin makan malam hari sabtu jam tujuh
+catat | catat futsal hari sabtu dan minggu jam empat sore
+catat | besok saya ada kondangan jam satu siang
+hapus | hapus jadwal rapat divisi
+hapus | hapus jadwal saya besok
+hapus | batalkan meeting besok
+hapus | hapusin jadwal futsal
+reschedule | geser rapat divisi ke tanggal lima jam dua siang
+reschedule | pindahkan meeting jadi besok jam sepuluh pagi
+reschedule | pindahin kuliah ke lusa
+edit | edit jadwal saya
+edit | ubah nama jadwal rapat
+reminder | ingatkan saya satu jam sebelum meeting
+reminder | ingetin tiga puluh menit sebelum rapat divisi
+waktu | sekarang jam berapa
+waktu | hari ini tanggal berapa
+waktu | lima belas menit lagi jam berapa
+waktu | lima ratus dua belas hari dari sekarang itu hari apa
+timer | timer lima menit buat angkat jemuran
+alarm | setel alarm jam lima pagi
+ganti_nama | panggil saya Dzaky
