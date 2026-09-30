@@ -1,0 +1,40 @@
+# ============================================================
+#  Dependensi AKIRA
+#  PyTorch TIDAK ada di sini: pasang lebih dulu dengan versi CUDA,
+#  lihat SETUP.md langkah 4.
+# ============================================================
+
+# --- Audio & wake word ---
+openwakeword
+pyaudio
+sounddevice
+soundfile          # dekode audio di memori (butuh libsndfile >= 1.1)
+webrtcvad-wheels   # JANGAN 'webrtcvad' biasa — butuh MS Visual C++
+
+# --- Speech to Text ---
+openai-whisper     # mesin lokal, sekaligus cadangan saat internet mati
+requests           # panggilan API Groq
+
+# --- Text to Speech ---
+edge-tts           # lapis 1: suara neural Indonesia (online)
+piper-tts          # lapis 2: suara Indonesia luring
+pyttsx3            # lapis 3: suara bawaan Windows
+
+# --- NLP ---
+ollama             # qwen3:4b lokal
+dateparser         # jaring pengaman terakhir penguraian tanggal
+
+# --- Google Calendar ---
+google-auth-oauthlib
+google-api-python-client
+google-auth-httplib2
+
+# --- Utilitas ---
+numpy
+pyyaml
+python-dotenv
+loguru
+pytest
+
+# --- Opsional ---
+# keyboard         # pintasan keyboard GLOBAL (berfungsi di luar jendela AKIRA)

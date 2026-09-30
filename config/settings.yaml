@@ -1,0 +1,157 @@
+# Konfigurasi utama AKIRA
+# Ubah nilai di sini sesuai kebutuhan, jangan hardcode di kode Python
+
+wakeword:
+  model_path: "models/akira_wake_up.onnx"
+  threshold: 0.6        # naikkan kalau masih suka aktif sendiri, turunkan kalau susah dipanggil
+  confirm_frames: 2     # skor harus bertahan sekian frame (1 frame = 80 ms)
+  cooldown_s: 3.0       # abaikan deteksi sekian detik setelah sesi selesai
+
+audio:
+  sample_rate: 16000
+  frame_duration_ms: 30
+  # ~0,54 detik diam sudah cukup untuk menyimpulkan kalimat selesai.
+  # Turunkan lagi (misal 14) kalau AKIRA masih terasa lambat menjawab;
+  # naikkan kalau kalimatmu sering kepotong di tengah.
+  max_silence_frames: 18
+  vad_aggressiveness: 3    # 0-3, makin tinggi makin ketat memilah suara vs noise
+  max_duration_s: 10       # batas aman; perintah suara jarang lebih dari ini
+  # Energi minimum (RMS 0-32767) agar sebuah frame dihitung sebagai suara.
+  # Naikkan kalau ruangan berisik (kipas/AC bikin rekaman tidak berhenti),
+  # turunkan kalau suaramu pelan atau mic kurang sensitif.
+  rms_ambang: 320
+
+stt:
+  # ================= LAPIS 1 — mesin transkripsi =================
+  #   whisper     Whisper lokal. Gratis, offline, selalu jadi cadangan.
+  #   groq-turbo  whisper-large-v3-turbo di Groq. Cepat.
+  #   groq-v3     whisper-large-v3 di Groq. Sedikit lebih teliti.
+  #
+  # Tiga mesin dijalankan PARALEL. Dua model Groq sengaja dipakai sebagai
+  # mesin terpisah: keduanya salah di tempat berbeda, dan itulah yang membuat
+  # voting berguna. Mesin yang API key-nya kosong otomatis dilewati.
+  engine: ["whisper", "groq-turbo", "groq-v3"]
+
+  # Hanya untuk Whisper LOKAL. Biarkan "small": sejak lapis 1 memakai
+  # whisper-large-v3 di Groq, yang lokal cuma cadangan saat internet mati,
+  # dan "medium" butuh ~5GB VRAM — di atas kapasitas RTX 3050 4GB.
+  model_size: "small"
+  language: "id"
+  device: "cuda"          # ganti "cpu" kalau tidak ada GPU
+
+  ensemble:
+    # Batas tunggu tiap mesin. Yang lewat batas diabaikan, tidak menahan sisanya.
+    timeout_s: 12
+
+    # ================= LAPIS 2 — perekonsiliasi =================
+    # Dipakai HANYA kalau mesin STT tidak sepakat. Dua penalar dari keluarga
+    # model berbeda: kalau keduanya sampai pada kalimat yang sama,
+    # keyakinannya jauh lebih tinggi daripada satu model yang percaya diri.
+    #
+    #   groq    butuh GROQ_API_KEY
+    #   groq2   sama, tapi model lain — pendapat kedua yang independen
+    #   lokal   qwen3 lewat Ollama. Gratis, offline, cadangan terakhir.
+    perekonsiliasi: ["groq", "groq2"]
+
+    # Model LLM yang tersedia di Groq (per September 2026):
+    #   openai/gpt-oss-20b     cepat, cukup untuk memilih kalimat    <- dipakai
+    #   qwen/qwen3.8-27b       keluarga berbeda, pendapat kedua      <- dipakai
+    #   openai/gpt-oss-120b    paling teliti, paling lambat (cadangan)
+    #
+    # gpt-oss-120b tidak dipakai langsung: tugasnya cuma memilih di antara
+    # beberapa kalimat pendek, dan model lebih besar menambah latensi tepat
+    # saat user sedang menunggu jawaban.
+    model_perekonsiliasi:
+      groq: "openai/gpt-oss-20b"
+      groq2: "qwen/qwen3.8-27b"
+
+tts:
+  default_engine: "online"   # "online" (Edge TTS) atau "offline" (Piper)
+  language: "id"
+
+nlp:
+  # Ganti model di sini saja — tidak ada kode yang perlu disentuh.
+  #
+  #   qwen3:4b      - REKOMENDASI. ~2,6 GB. Penalaran & pemahaman kalimat
+  #                   non-baku paling baik di kelas ringan. Mode "thinking"
+  #                   sudah dimatikan dari kode supaya tetap cepat.
+  #   qwen3:1.7b    - kalau 4b terasa berat. ~1,4 GB, masih lebih paham
+  #                   bahasa santai dibanding qwen2.5:3b.
+  #   qwen2.5:3b    - pilihan lama, tetap jalan. Paling hemat kalau RAM sempit.
+  #   llama3.2:3b   - alternatif; Bahasa Indonesia terasa lebih kaku.
+  ollama_model: "qwen3:4b"
+  ollama_host: "http://localhost:11434"
+
+# --- Mode ambient: dengar terus tanpa wake word ---
+# Setelah AKIRA dibangunkan sekali dengan "AKIRA WAKE UP", cukup sebut
+# namanya di dalam kalimat: "Akira, besok aku ada meeting jam 10, tambahkan ya".
+ambient:
+  enabled: true
+  # Setelah sekian menit tanpa aktivitas, AKIRA kembali menunggu wake word.
+  # Batas ini menjaga GPU tidak dipakai mentranskripsi obrolan seharian.
+  timeout_menit: 15
+  # Berapa lama menunggu suara sebelum mengecek ulang. Kecil = lebih responsif,
+  # besar = lebih hemat. VAD sudah menjaga Whisper tidak jalan saat sepi.
+  cek_tiap_detik: 3
+
+dialog:
+  # Mode percakapan: setelah wake word, AKIRA tetap mendengarkan
+  # perintah berikutnya tanpa harus dipanggil ulang.
+  follow_up_timeout_s: 8      # diam sekian detik -> AKIRA tanya "masih ada lagi?"
+  max_idle_turns: 2           # dua kali diam berturut-turut -> balik standby
+  briefing_days: 7            # cakupan laporan agenda (hari)
+  # false = laporan agenda menunggu panggilan "AKIRA WAKE UP" pertama hari itu.
+  # true  = dibacakan langsung begitu program nyala, sebelum dipanggil.
+  briefing_on_start: false
+  briefing_once_per_day: true # laporan agenda cukup SEKALI per hari, tidak diulang tiap wake word
+
+# --- Perintah rahasia: AKIRA menghapus dirinya sendiri ---
+# Fitur ini NONAKTIF selama file model di bawah tidak ada. Isi model_path
+# dengan hasil training wake word kedua kalau ingin mengaktifkannya.
+self_destruct:
+  model_path: "models/akira_destroy.onnx"   # frasa: "AKIRA DESTROY YOURSELF"
+  # Ambang SENDIRI, sengaja lebih tinggi dari wake word utama (0.6).
+  # Kedua frasa sama-sama diawali kata "AKIRA", jadi ada risiko nyata
+  # "akira wake up" ikut menaikkan skor model ini. Lebih baik perintah
+  # rahasianya kadang perlu diulang daripada terpicu tanpa sengaja.
+  #
+  # Bisa diubah di aplikasi: Pengaturan -> Sensitivitas self destruct.
+  #   Rendah 0.85  |  Sedang 0.72  |  Tinggi 0.65
+  # Batas bawah 0.65 SELALU di atas ambang wake word utama (0.6), supaya
+  # "AKIRA WAKE UP" tidak ikut menaikkan skor frasa penghancur.
+  threshold: 0.72
+  # Deteksi frasa dari TEKS transkripsi Whisper, SEBAGAI CADANGAN saja.
+  #
+  # Sejak Sprint 3.22, model wake word sudah dinilai langsung dari audio
+  # bahkan saat mode ambient berjalan — jadi jalur utamanya tidak lagi
+  # bergantung pada Whisper. Opsi ini tetap ada karena kadang membantu
+  # (frasa diucapkan di tengah kalimat lain), tapi karena Whisper rutin
+  # salah dengar, matikan saja kalau AKIRA pernah terpicu tanpa sengaja.
+  aktif_lewat_teks: true
+  # data  = hapus token login, log, dan pengaturan saja (AMAN, default)
+  # model = data + seluruh folder models/ termasuk wake word hasil training
+  # total = seluruh folder proyek, termasuk kode program
+  tingkat: "data"
+  # Zip seluruh proyek ke folder induk sebelum menghapus apa pun.
+  #
+  # backup: true  -> masih ada file .zip tersisa (bisa dipulihkan)
+  # backup: false -> BENAR-BENAR tidak menyisakan apa pun
+  #
+  # Untuk self destroy sungguhan: tingkat "total" + backup false.
+  # Setelah itu tidak ada cara memulihkan selain clone ulang dari GitHub.
+  backup: true
+
+reminder:
+  check_interval_seconds: 30   # makin kecil makin cepat bereaksi, beban API tetap ringan
+  # Berapa menit sebelum acara AKIRA mengingatkan. Boleh diisi berapa pun tingkat.
+  # Contoh lain: [60, 30, 10] atau [15] saja kalau tidak mau terlalu cerewet.
+  lead_tiers_minutes: [30, 15, 5]
+
+calendar:
+  timezone: "Asia/Jakarta"
+  scopes:
+    - "https://www.googleapis.com/auth/calendar"
+
+required_fields:
+  - "tanggal"
+  - "jam"

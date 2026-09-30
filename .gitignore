@@ -1,0 +1,34 @@
+# --- Lingkungan & cache
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# --- KREDENSIAL — jangan pernah diunggah
+.env
+config/credentials.json
+config/token.json
+
+# --- Data pribadi pengguna
+logs/
+*.log
+*.wav
+!models/*.wav
+*.mp3
+config/session_state.json
+config/user_settings.json
+config/pintasan.json
+
+# --- Model
+# Model wake word hasil latihan tim WAJIB ikut: tanpa itu repositori tidak
+# bisa dijalankan siapa pun. Hanya suara Piper (63 MB, melewati ambang
+# peringatan GitHub) yang diunduh terpisah — lihat SETUP.md.
+models/*.onnx
+!models/akira_wake_up.onnx
+!models/akira_destroy.onnx
+models/*.ppn
+
+# --- Hasil self destruct
+akira_backup_*.zip
+akira_hapus_*.bat
