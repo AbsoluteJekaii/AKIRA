@@ -136,6 +136,28 @@ def check_all_tiers(say_fn, lead_tiers: list[int] | None = None):
                 break
 
 
+def sinkron_antrean(say_fn) -> int:
+    """
+    Kirim jadwal yang tersimpan saat offline. Return jumlah yang terkirim.
+
+    Menumpang loop reminder supaya tidak ada thread baru. Ditunda kalau AKIRA
+    sedang melayani user, supaya pengumuman tidak menabrak percakapan.
+    Kegagalan apa pun di sini tidak boleh menghentikan loop reminder.
+    """
+    try:
+        from src.calendar_service import offline_queue
+
+        if offline_queue.jumlah() == 0 or is_busy():
+            return 0
+        berhasil, _ = offline_queue.sinkronkan()
+        if berhasil:
+            say_fn(offline_queue.ucapkan_hasil_sinkron(berhasil))
+        return len(berhasil)
+    except Exception as e:
+        logger.error(f"Sinkronisasi antrean offline gagal: {e}")
+        return 0
+
+
 def announce_startup_briefing(say_fn, days: int = BRIEFING_DAYS):
     """
     Laporan agenda begitu AKIRA dinyalakan — tanpa menunggu wake word,
@@ -169,9 +191,12 @@ def start_reminder_loop(
     def loop():
         logger.info(f"Reminder aktif (cek tiap {interval} detik, ingatkan H-{tiers} menit)")
         if run_immediately:
+            sinkron_antrean(say_fn)
             check_all_tiers(say_fn, tiers)
         while True:
             time.sleep(interval)
+            # Antrean dulu: jadwal yang baru terkirim ikut diperiksa pengingatnya
+            sinkron_antrean(say_fn)
             check_all_tiers(say_fn, tiers)
 
     thread = threading.Thread(target=loop, daemon=True)

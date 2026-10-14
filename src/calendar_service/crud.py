@@ -22,10 +22,13 @@ def create_event(
     end_datetime: str,
     timezone: str = TIMEZONE,
     description: str = None,
+    event_id: str = None,
 ):
     """
     start_datetime / end_datetime format ISO: '2026-09-10T15:00:00'
     description opsional — diisi dari pertanyaan susulan AKIRA kalau user mau.
+    event_id opsional: dipakai antrean offline supaya kiriman ulang tidak
+    membuat event ganda (Google membalas 409 kalau ID sudah ada).
     """
     service = get_service()
     event = {
@@ -35,6 +38,8 @@ def create_event(
     }
     if description:
         event["description"] = description
+    if event_id:
+        event["id"] = event_id
     try:
         created = service.events().insert(calendarId="primary", body=event).execute()
         logger.info(f"Event dibuat: {created.get('summary')} ({created.get('id')})")

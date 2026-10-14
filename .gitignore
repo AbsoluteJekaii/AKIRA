@@ -19,6 +19,9 @@ logs/
 config/session_state.json
 config/user_settings.json
 config/pintasan.json
+# Antrean jadwal saat offline (berisi jadwal pribadi)
+config/pending_events*.json
+config/pending_events.tmp
 
 # --- Model
 # Model wake word hasil latihan tim WAJIB ikut: tanpa itu repositori tidak

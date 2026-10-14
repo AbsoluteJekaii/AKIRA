@@ -962,6 +962,7 @@ def _catat_banyak_tanggal(data: dict, execute, konteks, say):
     per_tanggal = data.get("jam_per_tanggal") or {}
     keg_per = data.get("kegiatan_per_tanggal") or {}
     berhasil, gagal = [], []
+    ada_offline = False
 
     for tanggal in tanggal_list:
         satuan = dict(data)
@@ -975,6 +976,7 @@ def _catat_banyak_tanggal(data: dict, execute, konteks, say):
         if hasil.get("success"):
             berhasil.append(tanggal)
             konteks.catat_event(hasil.get("data"))
+            ada_offline = ada_offline or bool(hasil.get("offline"))
         else:
             gagal.append(tanggal)
             logger.error(f"Gagal mencatat {tanggal}: {hasil.get('message')}")
@@ -990,6 +992,9 @@ def _catat_banyak_tanggal(data: dict, execute, konteks, say):
             rincian = gabung_tanggal(berhasil, per_tanggal)
             jam = "" if per_tanggal else f", jam {data.get('jam')}"
             say(f"Sudah saya catat, Bos. {nama.capitalize()} pada {rincian}{jam}.")
+        if ada_offline:
+            say("Karena internet sedang terputus, jadwalnya saya simpan dulu "
+                "dan otomatis saya masukkan ke kalender begitu online, Bos.")
     if gagal:
         daftar = ", ".join(ucapkan_tanggal(t, sebut_tahun=False) for t in gagal)
         say(f"Tapi {daftar} gagal saya simpan, Bos.")

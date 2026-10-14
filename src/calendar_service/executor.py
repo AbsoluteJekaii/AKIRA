@@ -167,7 +167,23 @@ def _handle_catat(data: dict) -> dict:
     else:
         end = compute_end_time(data["tanggal"], data["jam"])
 
-    event = create_event(kegiatan, start, end, description=data.get("deskripsi"))
+    try:
+        event = create_event(kegiatan, start, end, description=data.get("deskripsi"))
+    except Exception as e:
+        # Internet putus: simpan dulu, kirim otomatis saat online lagi.
+        # Galat lain (token dicabut, data ditolak) tetap dilaporkan seperti biasa.
+        from src.calendar_service import offline_queue
+
+        if not offline_queue.galat_jaringan(e):
+            raise
+        item = offline_queue.simpan(kegiatan, start, end, description=data.get("deskripsi"))
+        pesan = (
+            f"Internet sedang terputus, Bos. {kegiatan} pada "
+            f"{_ucapkan_tanggal(data['tanggal'], True)} jam {data['jam']} saya simpan dulu, "
+            f"nanti otomatis saya masukkan ke kalender begitu online"
+        )
+        return {"success": True, "message": pesan + ".",
+                "data": offline_queue.sebagai_event(item), "offline": True}
 
     pesan = (
         f"Sudah saya catat, Bos. {kegiatan} pada "

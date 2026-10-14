@@ -50,6 +50,7 @@ TINGKAT = {
         "config/session_state.json",
         "config/user_settings.json",   # nama panggilan
         "config/pintasan.json",
+        "config/pending_events.json",  # jadwal yang tersimpan saat offline
         "logs",                        # berisi transkripsi setiap ucapan
         # Rekaman suara terakhir. Sebelumnya tercantum "temp.wav" — nama
         # lama yang sudah tidak dipakai — sehingga rekaman sungguhan justru
