@@ -31,7 +31,8 @@ SAMPLE_RATE = 16000
 
 DEFAULT_THRESHOLD = 0.6      # dinaikkan dari 0.5 — 0.5 terlalu mudah kepicu
 DEFAULT_CONFIRM_FRAMES = 2   # 2 frame = 160 ms skor harus bertahan tinggi
-DEFAULT_COOLDOWN_S = 3.0     # abaikan deteksi sekian detik setelah sesi selesai
+DEFAULT_COOLDOWN_S = 1.5     # abaikan deteksi sekian detik setelah sesi selesai
+PRIMING_CHUNKS = 18          # 18 x 80 ms = 1,44 detik untuk mengisi buffer openWakeWord
 
 _model_cache = {}
 _last_detection_time = 0.0
@@ -109,19 +110,29 @@ def listen_for_wakeword(
         frames_per_buffer=CHUNK_SIZE,
     )
 
-    logger.info("Menunggu wake word 'AKIRA WAKE UP'...")
     try:
         try:
             oww_model.reset()  # buang skor sisa sesi sebelumnya
         except Exception:
             pass
 
-        # Buang audio yang menumpuk di buffer selama sesi sebelumnya berjalan
-        for _ in range(int(SAMPLE_RATE / CHUNK_SIZE)):
+        # PRIMING. openWakeWord butuh sekitar 1,3 detik audio untuk mengisi
+        # buffer fiturnya; sebelum itu skornya selalu 0. Versi lama membuang
+        # audio 1 detik lalu menunggu buffer terisi dari nol, sehingga AKIRA
+        # tuli sekitar 2 detik setelah log "Menunggu" muncul. Sekarang audio
+        # yang sama langsung dipakai mengisi buffer (sekaligus membuang audio
+        # basi), dan skor selama priming diabaikan.
+        for _ in range(PRIMING_CHUNKS):
             try:
-                stream.read(CHUNK_SIZE, exception_on_overflow=False)
+                chunk = np.frombuffer(
+                    stream.read(CHUNK_SIZE, exception_on_overflow=False), dtype=np.int16
+                )
+                oww_model.predict(chunk)
             except Exception:
                 break
+
+        # Log baru muncul setelah detektor benar-benar siap mendengar.
+        logger.info("Siap: menunggu wake word 'AKIRA WAKE UP'...")
 
         hits = 0
         skor_tertinggi = 0.0
@@ -202,6 +213,18 @@ def listen_for_wakeword(
             pa.terminate()
         except Exception:
             pass
+
+
+def panaskan(model_paths) -> None:
+    """
+    Muat model wake word saat startup (dipanggil dari warmup_all), supaya
+    panggilan pertama tidak menunggu ONNX dimuat.
+    """
+    try:
+        load_model(model_paths)
+        logger.info("Model wake word dimuat")
+    except Exception as e:
+        logger.warning(f"Gagal memuat model wake word saat warmup: {e}")
 
 
 def tandai_deteksi_sekarang():
